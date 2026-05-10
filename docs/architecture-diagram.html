@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Agent Chat Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'JetBrains Mono', monospace; background: #020617; min-height: 100vh; padding: 2rem; color: white; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot { width: 12px; height: 12px; background: #22d3ee; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container { background: rgba(15, 23, 42, 0.5); border-radius: 1rem; border: 1px solid #1e293b; padding: 1.5rem; overflow-x: auto; }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .card { background: rgba(15, 23, 42, 0.5); border-radius: 0.75rem; border: 1px solid #1e293b; padding: 1.25rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card-dot.orange { background: #fb923c; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Multi-Agent Chat — Architecture</h1>
+      </div>
+      <p class="subtitle">Hermes-based CLI multi-agent group chat · Unix Domain Socket IPC · Process-isolated Agent runners</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1000 720">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+          <marker id="arrow-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- ========== USER ========== -->
+        <rect x="30" y="20" width="120" height="44" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="90" y="38" fill="white" font-size="11" font-weight="600" text-anchor="middle">User</text>
+        <text x="90" y="52" fill="#94a3b8" font-size="9" text-anchor="middle">CLI REPL</text>
+
+        <!-- Arrow: User -> Orchestrator -->
+        <line x1="150" y1="42" x2="198" y2="42" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+        <text x="174" y="36" fill="#94a3b8" font-size="8" text-anchor="middle">stdin</text>
+
+        <!-- ========== ORCHESTRATOR (Main Process) ========== -->
+        <rect x="200" y="10" width="240" height="80" rx="8" fill="rgba(251, 146, 60, 0.15)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="320" y="30" fill="#fb923c" font-size="10" font-weight="700" text-anchor="middle">Orchestrator</text>
+        <text x="320" y="46" fill="#94a3b8" font-size="8" text-anchor="middle">main.py — REPL + 消息路由</text>
+        <text x="320" y="60" fill="#94a3b8" font-size="8" text-anchor="middle">进程管理 · 状态机</text>
+        <text x="320" y="74" fill="#94a3b8" font-size="8" text-anchor="middle">Profile Manager</text>
+
+        <!-- Orchestrator sub-modules -->
+        <rect x="210" y="100" width="220" height="28" rx="4" fill="rgba(30, 41, 59, 0.5)" stroke="#475569" stroke-width="1"/>
+        <text x="320" y="118" fill="#94a3b8" font-size="8" text-anchor="middle">SpeechController · AdminRole · GoalMode · StateManager</text>
+
+        <!-- ========== CHAT BUS (UDS) ========== -->
+        <rect x="200" y="155" width="240" height="40" rx="6" fill="rgba(251, 146, 60, 0.25)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="320" y="171" fill="#fb923c" font-size="10" font-weight="600" text-anchor="middle">ChatBus</text>
+        <text x="320" y="185" fill="#94a3b8" font-size="8" text-anchor="middle">Unix Domain Socket · select.select()</text>
+
+        <!-- Arrow: Orchestrator -> ChatBus -->
+        <line x1="320" y1="130" x2="320" y2="153" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+
+        <!-- ========== AGENT RUNNERS ========== -->
+        <!-- Agent Runner boundary -->
+        <rect x="200" y="210" width="560" height="180" rx="10" fill="rgba(6, 78, 59, 0.1)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="210" y="226" fill="#34d399" font-size="9" font-weight="600">Agent Processes (isolated)</text>
+
+        <!-- Profile Agent 1 -->
+        <rect x="210" y="236" width="160" height="64" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="290" y="256" fill="white" font-size="10" font-weight="600" text-anchor="middle">Profile Agent</text>
+        <text x="290" y="271" fill="#94a3b8" font-size="8" text-anchor="middle">product-manager</text>
+        <text x="290" y="285" fill="#34d399" font-size="8" text-anchor="middle">agent_runner.py</text>
+
+        <!-- Profile Agent 2 -->
+        <rect x="390" y="236" width="160" height="64" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="470" y="256" fill="white" font-size="10" font-weight="600" text-anchor="middle">Profile Agent</text>
+        <text x="470" y="271" fill="#94a3b8" font-size="8" text-anchor="middle">engineer</text>
+        <text x="470" y="285" fill="#34d399" font-size="8" text-anchor="middle">agent_runner.py</text>
+
+        <!-- Profile Agent 3 -->
+        <rect x="570" y="236" width="160" height="64" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="650" y="256" fill="white" font-size="10" font-weight="600" text-anchor="middle">Profile Agent</text>
+        <text x="650" y="271" fill="#94a3b8" font-size="8" text-anchor="middle">designer</text>
+        <text x="650" y="285" fill="#34d399" font-size="8" text-anchor="middle">agent_runner.py</text>
+
+        <!-- Hermes Bridge -->
+        <rect x="210" y="316" width="520" height="56" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="470" y="336" fill="white" font-size="10" font-weight="600" text-anchor="middle">Hermes Bridge</text>
+        <text x="470" y="351" fill="#94a3b8" font-size="8" text-anchor="middle">hermes chat -q -p &lt;profile&gt; -s &lt;skill&gt; — subprocess per call</text>
+        <text x="470" y="364" fill="#fb923c" font-size="8" text-anchor="middle">GBrain memory (profile-level, cross-session)</text>
+
+        <!-- Hermes CLI (external) -->
+        <rect x="750" y="260" width="100" height="50" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="800" y="281" fill="white" font-size="10" font-weight="600" text-anchor="middle">Hermes CLI</text>
+        <text x="800" y="295" fill="#94a3b8" font-size="8" text-anchor="middle">nousresearch</text>
+
+        <!-- Arrows: Agent -> Hermes Bridge -->
+        <line x1="290" y1="300" x2="290" y2="314" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="470" y1="300" x2="470" y2="314" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="650" y1="300" x2="650" y2="314" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- Arrows: Hermes Bridge -> Hermes CLI -->
+        <line x1="730" y1="294" x2="748" y2="282" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- Arrow: ChatBus -> Agent Runners -->
+        <line x1="200" y1="175" x2="200" y2="250" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+        <line x1="440" y1="175" x2="440" y2="268" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+        <line x1="660" y1="175" x2="660" y2="268" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+        <line x1="320" y1="195" x2="290" y2="234" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="320" y1="195" x2="470" y2="234" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="320" y1="195" x2="650" y2="234" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+
+        <!-- Arrow: User -> Orchestrator (command input) -->
+        <line x1="90" y1="64" x2="90" y2="110" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="90" y1="110" x2="198" y2="60" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3,3"/>
+
+        <!-- ========== SPEECH FLOW ========== -->
+        <rect x="500" y="410" width="260" height="100" rx="8" fill="rgba(136, 19, 55, 0.15)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="630" y="430" fill="#fb7185" font-size="10" font-weight="700" text-anchor="middle">Speech Control Flow</text>
+        <text x="515" y="450" fill="#94a3b8" font-size="8">1. orchestrator 选出发言者</text>
+        <text x="515" y="465" fill="#94a3b8" font-size="8">2. Agent 生成回复，写入 ChatBus</text>
+        <text x="515" y="480" fill="#94a3b8" font-size="8">3. 回复末尾必须含 END_MARKER</text>
+        <text x="515" y="495" fill="#94a3b8" font-size="8">4. orchestrator 看到 END_MARKER</text>
+        <text x="515" y="510" fill="#94a3b8" font-size="8">5. 释放锁，下一位获得发言权</text>
+
+        <!-- Arrow: Agents -> Speech Flow -->
+        <line x1="440" y1="360" x2="560" y2="430" stroke="#fb7185" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="560" y1="420" x2="560" y2="385" stroke="#fb7185" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- ========== SESSION STATE ========== -->
+        <rect x="780" y="10" width="190" height="80" rx="8" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="875" y="30" fill="#a78bfa" font-size="10" font-weight="600" text-anchor="middle">Session State</text>
+        <text x="875" y="46" fill="#94a3b8" font-size="8" text-anchor="middle">state/session.json</text>
+        <text x="875" y="60" fill="#94a3b8" font-size="8" text-anchor="middle">members · modes</text>
+        <text x="875" y="74" fill="#94a3b8" font-size="8" text-anchor="middle">speech_order · history</text>
+
+        <!-- Arrow: Orchestrator -> Session -->
+        <line x1="440" y1="30" x2="778" y2="46" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- ========== RULES ENGINE ========== -->
+        <rect x="780" y="120" width="190" height="120" rx="8" fill="rgba(136, 19, 55, 0.2)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="875" y="140" fill="#fb7185" font-size="10" font-weight="600" text-anchor="middle">Rules Engine</text>
+        <text x="875" y="158" fill="#94a3b8" font-size="8" text-anchor="middle">speech_controller.py</text>
+        <text x="875" y="172" fill="#94a3b8" font-size="8" text-anchor="middle">IDLE → SPEAKING → END</text>
+        <text x="875" y="190" fill="#94a3b8" font-size="8" text-anchor="middle">admin_role.py</text>
+        <text x="875" y="204" fill="#94a3b8" font-size="8" text-anchor="middle">打断 · 优先发言 · 任务分配</text>
+        <text x="875" y="222" fill="#94a3b8" font-size="8" text-anchor="middle">goal_mode.py</text>
+        <text x="875" y="236" fill="#94a3b8" font-size="8" text-anchor="middle">目标拆解 · 进度追踪</text>
+
+        <!-- Arrow: Orchestrator -> Rules -->
+        <line x1="440" y1="70" x2="778" y2="140" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- ========== LEGEND ========== -->
+        <text x="20" y="460" fill="white" font-size="10" font-weight="600">Legend</text>
+        <rect x="20" y="472" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="42" y="480" fill="#94a3b8" font-size="8">User / CLI</text>
+        <rect x="20" y="488" width="16" height="10" rx="2" fill="rgba(251, 146, 60, 0.25)" stroke="#fb923c" stroke-width="1"/>
+        <text x="42" y="496" fill="#94a3b8" font-size="8">Orchestrator / Bus</text>
+        <rect x="20" y="504" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="42" y="512" fill="#94a3b8" font-size="8">Agent Process</text>
+        <rect x="20" y="520" width="16" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="42" y="528" fill="#94a3b8" font-size="8">External Tool</text>
+        <rect x="20" y="536" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="42" y="544" fill="#94a3b8" font-size="8">State Storage</text>
+        <rect x="20" y="552" width="16" height="10" rx="2" fill="rgba(136, 19, 55, 0.2)" stroke="#fb7185" stroke-width="1"/>
+        <text x="42" y="560" fill="#94a3b8" font-size="8">Rules Engine</text>
+        <line x1="20" y1="574" x2="36" y2="574" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <text x="42" y="577" fill="#94a3b8" font-size="8">UDS Socket</text>
+        <line x1="20" y1="590" x2="36" y2="590" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="42" y="593" fill="#94a3b8" font-size="8">CLI Input</text>
+
+        <!-- ========== PROTOCOL ========== -->
+        <rect x="20" y="620" width="180" height="72" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="110" y="640" fill="white" font-size="9" font-weight="600" text-anchor="middle">Protocol (bus/protocol.py)</text>
+        <text x="110" y="656" fill="#94a3b8" font-size="8" text-anchor="middle">10 message types · JSON</text>
+        <text x="110" y="670" fill="#94a3b8" font-size="8" text-anchor="middle">JOIN · LEAVE · CHAT · SPEAK</text>
+        <text x="110" y="684" fill="#94a3b8" font-size="8" text-anchor="middle">MENTION · INTERRUPT · GOAL</text>
+      </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot orange"></div>
+          <h3>Core Components</h3>
+        </div>
+        <ul>
+          <li>• Orchestrator — REPL + 消息路由 + 进程生命周期</li>
+          <li>• ChatBus — UDS 服务端，select.select() 非阻塞事件循环</li>
+          <li>• Agent Runner — 常驻子进程，120s 超时保护，90s 无心跳 respawn</li>
+          <li>• Hermes Bridge — hermes chat -q 子进程调用封装</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>Speech Control</h3>
+        </div>
+        <ul>
+          <li>• 三态机：IDLE → SPEAKING → END</li>
+          <li>• END_MARKER = "我的发言结束。"</li>
+          <li>• 120s 超时兜底，强制打断释放锁</li>
+          <li>• Admin 可打断，@mention 触发自动入队</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Memory & State</h3>
+        </div>
+        <ul>
+          <li>• GBrain — profile 级别记忆，跨会话持久化</li>
+          <li>• session.json — 成员、模式、发言顺序（24h 过期）</li>
+          <li>• 各 profile 独立进程，状态隔离</li>
+          <li>• 退出自动保存，进入检测并恢复</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="footer">multi-agent-chat · v2.1 · Built on Hermes Agent · jasonno1</p>
+  </div>
+</body>
+</html>

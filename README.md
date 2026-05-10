@@ -1,4 +1,8 @@
-# Multi-Agent Chat v2.0 (mac)
+# Multi-Agent Chat v2.1
+
+![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux-lightgrey.svg)
 
 基于 Hermes Agent 的 CLI 多智能体群聊系统。通过独立常驻进程、Socket 通信总线和结构化发言控制，实现真正的拟人群聊协作。
 
