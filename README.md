@@ -11,10 +11,27 @@
 - **Hermes GBrain 记忆** — 每个 profile 的记忆由 Hermes GBrain 自动管理（profile 级别，跨会话持久化）
 - **干净输出** — 群聊空间内禁止 think/内部推理输出，只显示最终结论
 
+## 前置要求
+
+- **Hermes Agent** 已安装并配置好 profiles
+  - 安装方式：https://github.com/nousplatform/hermes-agent
+  - 确认 `hermes` 命令可用：`hermes --version`
+- **Python 3.9+**
+- **macOS / Linux**（依赖 Unix Domain Socket）
+
+## 安装
+
+```bash
+# 克隆仓库
+git clone https://github.com/jasonno1/multi-agent-chat.git ~/.hermes/tools/multi-agent-chat
+
+# 进入目录
+cd ~/.hermes/tools/multi-agent-chat
+```
+
 ## 快速开始
 
 ```bash
-cd ~/.hermes/tools/multi-agent-chat
 python3 main.py
 ```
 
