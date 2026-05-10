@@ -1,0 +1,44 @@
+# Multi-Agent Chat v2.0 Configuration
+
+# Hermes paths
+hermes_bin: "hermes"
+hermes_home: "~/.hermes"
+
+# Tool approval
+tool_approval:
+  mode: yolo
+
+# Profile response
+response:
+  timeout: 120           # seconds per profile response
+
+# Speech control
+speech:
+  end_marker: "我的发言结束。"
+  max_response_time: 120  # max seconds for a profile to respond
+
+# Goal mode
+goal:
+  max_tasks: 10           # max sub-tasks per goal
+
+# Agent processes
+agent:
+  start_timeout: 30       # seconds to wait for agent to connect
+  process_grace_period: 3  # seconds before force kill
+
+# Display
+display:
+  color: true
+  member_list_width: 40
+
+# State
+state:
+  dir: "state"
+  session_file: "session.json"
+  auto_save: true
+  expire_hours: 24
+
+# Memory
+memory:
+  dir: "/tmp/mac-memory"
+  max_interactions: 50
